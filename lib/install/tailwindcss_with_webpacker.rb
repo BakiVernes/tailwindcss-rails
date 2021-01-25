@@ -1,13 +1,25 @@
-LATEST_WEBPACKER         = "\"@rails\/webpacker\": \"rails\/webpacker#b6c2180\","
+LATEST_WEBPACKER = "gem 'webpacker', '~> 6.0.0.pre.2'"
 WEBPACK_STYLESHEETS_PATH = "#{Webpacker.config.source_path}/stylesheets"
 APPLICATION_LAYOUT_PATH  = Rails.root.join("app/views/layouts/application.html.erb")
 
 # Current webpacker version relies on an older version of PostCSS
 # which the latest TailwindCSS version is not compatible with
-gsub_file("package.json", /\"@rails\/webpacker\".*/) { |matched_line| matched_line = LATEST_WEBPACKER }
+
+# Update webpacker to pre-release for webpack-dev-server to work
+say "Upgrade webpacker gem"
+gsub_file('Gemfile', /gem 'webpacker',.*/) { |matched_line| matched_line = LATEST_WEBPACKER }
+run "bundle exec rails webpacker:install"
+run "rails app:update:bin "
+
+say "Upgrade rails webpacker to latest"
+run "yarn upgrade"
+
+say "Setup CSS and SAAS with the latest @rails/webpacker"
+run "yarn add css-loader mini-css-extract-plugin css-minimizer-webpack-plugin sass sass-loader"
 
 say "Adding latest Tailwind CSS and postCSS"
-run "yarn add tailwindcss@latest postcss@latest autoprefixer@latest"
+run "yarn add postcss@latest postcss-loader postcss-import postcss-flexbugs-fixes postcss-preset-env"
+run "yarn add tailwindcss@latest autoprefixer@latest"
 insert_into_file "#{Webpacker.config.source_entry_path}/application.js", "\nrequire(\"stylesheets/application.scss\")\n"
 
 say "Adding minimal configuration for Tailwind CSS to work properly"
